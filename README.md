@@ -93,77 +93,55 @@ eventique/
 git clone https://github.com/yourusername/eventique.git
 cd eventique
 2. Deploy Infrastructure (Terraform)
-bash
-Copy
-Edit
-cd terraform
-terraform init
-terraform apply
-This will:
 
-Create Cognito User Pool and App Client
+- cd terraform
+- terraform init
+- terraform apply
 
-Deploy API Gateway + Lambda integrations
+### This will:
 
-Provision DynamoDB tables
+- Create Cognito User Pool and App Client
 
-Setup S3 bucket and CloudFront distribution
+- Deploy API Gateway + Lambda integrations
 
-3. Build and Deploy Frontend
-bash
-Copy
-Edit
-cd frontend
-npm install
-npm run build
-aws s3 sync dist/ s3://<your-s3-bucket-name> --delete
-Then open the CloudFront URL from Terraform output to access the site.
+- Provision DynamoDB tables
 
-🧪 Usage
-Sign Up / Login – Create an account via Cognito-authenticated form
+- Setup S3 bucket and CloudFront distribution
 
-Browse Events – View all available upcoming events
+### Build and Deploy Frontend
+- cd frontend
+- npm install
+- npm run build
+- aws s3 sync dist/ s3://<your-s3-bucket-name> --delete
+- Then open the CloudFront URL from Terraform output to access the site.
 
-Register – Click "Register" on any event you like
+### 🧪 Usage
+- Sign Up / Login – Create an account via Cognito-authenticated form
 
-My Events – View all events you've registered for
+- Browse Events – View all available upcoming events
 
-💻 Key Frontend Pages
-AuthForm.tsx – Login/Signup logic using Cognito
+- Register – Click "Register" on any event you like
 
-Events.tsx – Browse upcoming events
+- My Events – View all events you've registered for
 
-EventCard.tsx – Render each event with details and action button
+### 💻 Key Frontend Pages
+- AuthForm.tsx – Login/Signup logic using Cognito
 
-MyEvents.tsx – Displays registered events
+- Events.tsx – Browse upcoming events
 
-CreateEvent.tsx – (Future Scope) Add new events (admin-only)
+- EventCard.tsx – Render each event with details and action button
 
-📡 Key Backend Lambda Functions
-getEvents – Fetch all upcoming events
+- MyEvents.tsx – Displays registered events
 
-registerEvent – Register a user for an event
+- CreateEvent.tsx – (Future Scope) Add new events (admin-only)
 
-getMyRegistrations – List a user’s registered events
+### 📡 Key Backend Lambda Functions
+- getEvents – Fetch all upcoming events
 
-All secured via AWS API Gateway and triggered with Lambda.
+- registerEvent – Register a user for an event
 
-📜 Future Improvements
-🔧 Admin-only event creation & deletion
+- getMyRegistrations – List a user’s registered events
 
-📤 CI/CD pipeline using GitHub Actions
+- All secured via AWS API Gateway and triggered with Lambda.
 
-📱 Mobile/PWA-friendly layout
-
-🔍 Filtering, categories, and advanced search options
-
-📅 Calendar integration for registered events
-
-🙌 Acknowledgements
-Special thanks to:
-
-🎓 Dr. Naween Kumar – for mentorship, direction, and review
-
-📄 License
-This project is licensed under the MIT License.
 
