@@ -1,0 +1,76 @@
+{
+  "Namespace": "AWS/EC2",
+  "MetricData": [
+    {
+      "MetricName": "CPUUtilization",
+      "Dimensions": [
+        {"Name": "InstanceId", "Value": "i-0a3f5c2b1d9e4f7a"}
+      ],
+      "Datapoints": [
+        {"Timestamp": "2026-05-10T14:00:00Z", "Average": 12.3, "Unit": "Percent"},
+        {"Timestamp": "2026-05-10T14:05:00Z", "Average": 14.7, "Unit": "Percent"},
+        {"Timestamp": "2026-05-10T14:10:00Z", "Average": 18.9, "Unit": "Percent"},
+        {"Timestamp": "2026-05-10T14:15:00Z", "Average": 45.2, "Unit": "Percent"},
+        {"Timestamp": "2026-05-10T14:20:00Z", "Average": 78.5, "Unit": "Percent"},
+        {"Timestamp": "2026-05-10T14:25:00Z", "Average": 95.8, "Unit": "Percent"},
+        {"Timestamp": "2026-05-10T14:30:00Z", "Average": 97.2, "Unit": "Percent"},
+        {"Timestamp": "2026-05-10T14:35:00Z", "Average": 96.1, "Unit": "Percent"},
+        {"Timestamp": "2026-05-10T14:40:00Z", "Average": 15.3, "Unit": "Percent"},
+        {"Timestamp": "2026-05-10T14:45:00Z", "Average": 12.8, "Unit": "Percent"}
+      ]
+    },
+    {
+      "MetricName": "NetworkIn",
+      "Dimensions": [
+        {"Name": "InstanceId", "Value": "i-0a3f5c2b1d9e4f7a"}
+      ],
+      "Datapoints": [
+        {"Timestamp": "2026-05-10T14:00:00Z", "Average": 125680, "Unit": "Bytes"},
+        {"Timestamp": "2026-05-10T14:10:00Z", "Average": 245390, "Unit": "Bytes"},
+        {"Timestamp": "2026-05-10T14:20:00Z", "Average": 1245600, "Unit": "Bytes"},
+        {"Timestamp": "2026-05-10T14:30:00Z", "Average": 1847300, "Unit": "Bytes"},
+        {"Timestamp": "2026-05-10T14:40:00Z", "Average": 187400, "Unit": "Bytes"}
+      ]
+    },
+    {
+      "MetricName": "NetworkOut",
+      "Dimensions": [
+        {"Name": "InstanceId", "Value": "i-0a3f5c2b1d9e4f7a"}
+      ],
+      "Datapoints": [
+        {"Timestamp": "2026-05-10T14:00:00Z", "Average": 89230, "Unit": "Bytes"},
+        {"Timestamp": "2026-05-10T14:10:00Z", "Average": 156780, "Unit": "Bytes"},
+        {"Timestamp": "2026-05-10T14:20:00Z", "Average": 987650, "Unit": "Bytes"},
+        {"Timestamp": "2026-05-10T14:30:00Z", "Average": 1567230, "Unit": "Bytes"},
+        {"Timestamp": "2026-05-10T14:40:00Z", "Average": 123450, "Unit": "Bytes"}
+      ]
+    },
+    {
+      "MetricName": "DiskReadOps",
+      "Dimensions": [
+        {"Name": "InstanceId", "Value": "i-0a3f5c2b1d9e4f7a"}
+      ],
+      "Datapoints": [
+        {"Timestamp": "2026-05-10T14:15:00Z", "Average": 245, "Unit": "Count"},
+        {"Timestamp": "2026-05-10T14:20:00Z", "Average": 3847, "Unit": "Count"},
+        {"Timestamp": "2026-05-10T14:25:00Z", "Average": 8934, "Unit": "Count"},
+        {"Timestamp": "2026-05-10T14:30:00Z", "Average": 10234, "Unit": "Count"},
+        {"Timestamp": "2026-05-10T14:35:00Z", "Average": 234, "Unit": "Count"}
+      ]
+    },
+    {
+      "MetricName": "StatusCheckFailed",
+      "Dimensions": [
+        {"Name": "InstanceId", "Value": "i-0a3f5c2b1d9e4f7a"}
+      ],
+      "Datapoints": [
+        {"Timestamp": "2026-05-10T14:00:00Z", "Average": 0, "Unit": "Count"},
+        {"Timestamp": "2026-05-10T14:20:00Z", "Average": 0, "Unit": "Count"},
+        {"Timestamp": "2026-05-10T14:40:00Z", "Average": 0, "Unit": "Count"}
+      ]
+    }
+  ],
+  "Timestamp": "2026-05-10T14:50:00Z",
+  "Period": 300,
+  "Statistics": ["Average", "Sum", "Maximum", "Minimum"]
+}

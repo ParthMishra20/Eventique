@@ -1,0 +1,40 @@
+INCIDENT REPORT: EC2 HIGH CPU USAGE
+Date: 2026-05-10 14:32:00 UTC
+Service: EC2 (i-0a3f5c2b1d9e4f7a) — Production Web Server
+Region: us-east-1
+Severity: CRITICAL
+
+SYMPTOMS:
+- EC2 instance CPU utilization spiked to 98% at 14:15 UTC
+- Application response time increased from 150ms to 2500ms
+- User reports of slow page loads and timeouts
+- Auto Scaling triggered but new instances also showed high CPU
+- CloudWatch alarms triggered for CPU > 80%
+
+ROOT CAUSE:
+- Web application deployed a new version (v2.3.1) with memory leak in request handler
+- Each request was not releasing database connections properly
+- Memory usage grew from 2GB to 6.8GB over 45 minutes
+- Swap memory exhausted, causing excessive disk I/O and context switching
+- Application threads blocked waiting for available memory
+
+INVESTIGATION STEPS:
+1. Accessed instance via SSH (10.0.1.45)
+2. Ran 'top' and 'ps aux' — confirmed application process at 180% CPU
+3. Used 'lsof' to check open file descriptors — found 8,247 database connections
+4. Checked application logs — saw repeated "Connection pool exhausted" warnings
+5. Reviewed recent deployments — v2.3.1 rolled out 45 min before incident
+6. Compared code changes with v2.3.0 — identified missing db.close() in request handler
+
+RESOLUTION:
+1. Rolled back application to v2.3.0 (10:43 UTC)
+2. Restarted application processes gracefully
+3. Monitored CPU — dropped to 12% within 2 minutes
+4. Updated deployment CI/CD to include connection pool tests
+5. Fixed bug: added explicit connection cleanup in finally block
+6. Redeployed v2.3.2 with fix at 15:05 UTC
+7. CPU remained stable at 8-15% for verification period
+
+TOTAL DOWNTIME: 48 minutes
+USER IMPACT: ~1,250 users affected, 847 failed requests
+REMEDIATION: Code review process enhanced for database operations

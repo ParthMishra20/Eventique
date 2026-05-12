@@ -1,0 +1,45 @@
+INCIDENT REPORT: DYNAMODB THROTTLING
+Date: 2026-04-30 16:20:00 UTC
+Service: DynamoDB (user-sessions table)
+Region: us-east-1
+Severity: HIGH
+
+SYMPTOMS:
+- DynamoDB provisioned throughput exceeded: 23,400 WCU consumption vs 10,000 WCU provisioned
+- User session writes failing with ProvisionedThroughputExceededException
+- Session persistence errors causing users to lose login state
+- Mobile app showing "Session expired" repeatedly after 1-2 minutes
+- Errors began at 16:08 UTC after gaming event promotion launch
+- User complaints: unable to stay logged in, repeated re-authentication required
+
+ROOT CAUSE:
+- Marketing campaign drove 3.2x expected traffic spike (250k → 750k concurrent users)
+- Application creating new session records for each page navigation (bad practice)
+- Session updates happening on every single request (not just login)
+- No batching of DynamoDB writes implemented
+- Provisioned throughput (10,000 WCU) sized for normal load of 100k concurrent
+- No auto-scaling configured on table
+
+INVESTIGATION STEPS:
+1. Checked DynamoDB CloudWatch metrics — write throttle events: 487 per minute
+2. Reviewed table metrics — consumed write capacity exceeded provisioned by 2.3x
+3. Analyzed write patterns — identified 8x more writes than normal
+4. Checked application logs — found session update on every page request
+5. Reviewed promotion details — 3.2x traffic spike was expected
+6. Verified auto-scaling setting on table — disabled (legacy configuration)
+7. Checked application code — session.save() called on every request
+
+RESOLUTION:
+1. Enabled DynamoDB auto-scaling: max 40,000 WCU (cost: +$200/day)
+2. Wrote capacity increased automatically from 10,000 to 28,000 WCU within 2 minutes
+3. Applied throttle burst capacity from DynamoDB adaptive capacity feature
+4. Updated application session code to batch writes (update every 5 minutes, not per request)
+5. Implemented session write-through cache (Redis) to reduce DynamoDB load
+6. Session persistence errors resolved within 8 minutes
+7. Deployed application update to production
+
+TOTAL DOWNTIME: 12 minutes (user logout/login loop)
+USER IMPACT: 287,000 active sessions affected
+FAILED OPERATIONS: 1,247 session write failures
+ADDITIONAL COST: +$6,000 for increased DynamoDB throughput (4 days of event)
+OPTIMIZATION: Reduced WCU consumption from 23,400 to 8,100 after code fix

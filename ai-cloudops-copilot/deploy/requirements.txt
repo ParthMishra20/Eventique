@@ -1,0 +1,14 @@
+# Lambda Deployment Dependencies
+# Install into Lambda package with: pip install -r requirements.txt -t ./lib/
+
+langchain
+langchain-core
+langchain-groq
+langchain-community
+langchain-text-splitters
+langchain-huggingface
+langgraph
+faiss-cpu
+sentence-transformers
+python-dotenv
+boto3

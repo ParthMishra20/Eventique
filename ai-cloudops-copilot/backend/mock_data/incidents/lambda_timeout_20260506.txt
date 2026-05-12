@@ -1,0 +1,43 @@
+INCIDENT REPORT: LAMBDA TIMEOUT
+Date: 2026-05-06 11:30:00 UTC
+Service: AWS Lambda (image-processor function)
+Region: us-east-1
+Severity: CRITICAL
+
+SYMPTOMS:
+- Lambda function invocations timing out at 60 second limit
+- Errors: "Task timed out after 60.00 seconds"
+- 34% of invocations failed between 11:12 and 11:47 UTC
+- DLQ received 1,247 failed messages
+- Concurrent execution count stuck at exactly 1,000 (reserved concurrency limit)
+- Average execution duration jumped from 2.3s to 58.2s
+
+ROOT CAUSE:
+- Upstream API (image CDN) returning 503 Service Unavailable responses
+- Lambda function had retry logic without exponential backoff
+- Each timeout retry attempted immediately (busy-waiting)
+- Concurrent Lambda executions piled up waiting for CDN responses
+- Reserved concurrency of 1,000 reached, new invocations queued indefinitely
+- Lambda eventually timed out on initial requests
+
+INVESTIGATION STEPS:
+1. Checked CloudWatch Logs Insights for timeout patterns
+2. Found repeated calls to image CDN returning 503 status
+3. Checked Lambda concurrency metrics — confirmed hitting 1,000 limit
+4. Reviewed Lambda code — saw bare while(true) retry without backoff
+5. Contacted CDN team — confirmed cache invalidation issue causing overload
+6. Lambda duration percentiles: p50=2s, p90=58s (bimodal distribution)
+
+RESOLUTION:
+1. Implemented exponential backoff with jitter (max 5 retries, 1-30s delays)
+2. Added timeout for upstream API calls (15 seconds)
+3. Configured circuit breaker pattern — fail fast after 3 consecutive CDN errors
+4. Deployed Lambda v1.2.1 with new retry logic
+5. Increased reserved concurrency from 1,000 to 2,000 (temporary)
+6. Enabled Lambda Dead Letter Queue monitoring
+7. CDN team resolved cache issue — normal responses resumed
+
+TOTAL DOWNTIME: 35 minutes
+FAILED INVOCATIONS: 1,247 (queued to SQS DLQ for replay)
+RESOLUTION TIME: 23 minutes from incident to deployment
+PREVENTION: Add timeout circuit breaker tests to Lambda CI/CD

@@ -1,0 +1,12 @@
+langchain
+langchain-core
+langchain-groq
+langchain-community
+langchain-text-splitters
+langchain-huggingface
+langgraph
+faiss-cpu==1.7.4
+sentence-transformers
+python-dotenv
+boto3
+numpy==1.26.4

@@ -1,0 +1,42 @@
+INCIDENT REPORT: LAMBDA COLD START LATENCY
+Date: 2026-05-05 07:00:00 UTC
+Service: AWS Lambda (API gateway integration)
+Region: us-east-1
+Severity: MEDIUM
+
+SYMPTOMS:
+- First request after 15 minutes idle → 8.2 second latency
+- Subsequent requests → 95ms latency (normal)
+- User-facing API calls experiencing 15% timeout rate during morning startup
+- Only affecting large memory allocation (3,008 MB) Lambda function
+- Issue appears consistently after functions scale down to 0 concurrent executions
+
+ROOT CAUSE:
+- Heavy dependency on large ML model library (2.1GB) loaded on every cold start
+- Lambda ZIP package size: 1.8GB (including model weights)
+- Initialization code in handler importing ML model during handler() invocation
+- Container initialization overhead: 2.3s, model loading: 5.8s
+- Lambda provisioned concurrency not configured
+- No code optimization to lazy-load dependencies
+
+INVESTIGATION STEPS:
+1. Enabled Lambda Insights monitoring — detailed duration breakdown
+2. X-Ray traces showed 73% time spent in model loading code
+3. Checked Lambda package contents — 1.8GB mostly model weights
+4. Reviewed AWS Lambda Cold Start blog posts and best practices
+5. Identified model loading in handler() function instead of global scope
+6. Tested with provisioned concurrency: cold start latency eliminated
+
+RESOLUTION:
+1. Refactored handler.py to load ML model globally (outside handler invocation)
+2. Split Lambda package: main code (45MB) + model layer (1.8GB separately)
+3. Enabled Lambda Provisioned Concurrency (5 concurrent executions)
+4. Deployed Lambda layer for model weights — reusable across versions
+5. Optimized ZIP package structure for faster extraction
+6. Cold start reduced from 8.2s to 1.1s (92% improvement)
+7. Estimated additional cost: $18/month for provisioned concurrency
+
+TOTAL DOWNTIME: 0 minutes (degraded performance only)
+USER IMPACT: 15% of requests showed elevated latency
+OPTIMIZATION GAIN: P99 latency improved from 8.5s to 1.3s
+ADDITIONAL COST: $18/month for provisioned concurrency

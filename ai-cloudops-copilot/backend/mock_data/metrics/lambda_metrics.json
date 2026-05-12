@@ -1,0 +1,105 @@
+{
+  "Namespace": "AWS/Lambda",
+  "MetricData": [
+    {
+      "MetricName": "Duration",
+      "Dimensions": [
+        {"Name": "FunctionName", "Value": "image-processor"}
+      ],
+      "Datapoints": [
+        {"Timestamp": "2026-05-06T11:00:00Z", "Average": 2234, "Unit": "Milliseconds"},
+        {"Timestamp": "2026-05-06T11:05:00Z", "Average": 2456, "Unit": "Milliseconds"},
+        {"Timestamp": "2026-05-06T11:10:00Z", "Average": 2345, "Unit": "Milliseconds"},
+        {"Timestamp": "2026-05-06T11:15:00Z", "Average": 58234, "Unit": "Milliseconds"},
+        {"Timestamp": "2026-05-06T11:20:00Z", "Average": 59012, "Unit": "Milliseconds"},
+        {"Timestamp": "2026-05-06T11:25:00Z", "Average": 60000, "Unit": "Milliseconds"},
+        {"Timestamp": "2026-05-06T11:30:00Z", "Average": 58456, "Unit": "Milliseconds"},
+        {"Timestamp": "2026-05-06T11:35:00Z", "Average": 2345, "Unit": "Milliseconds"},
+        {"Timestamp": "2026-05-06T11:40:00Z", "Average": 2456, "Unit": "Milliseconds"}
+      ]
+    },
+    {
+      "MetricName": "Errors",
+      "Dimensions": [
+        {"Name": "FunctionName", "Value": "image-processor"}
+      ],
+      "Datapoints": [
+        {"Timestamp": "2026-05-06T11:00:00Z", "Sum": 0, "Unit": "Count"},
+        {"Timestamp": "2026-05-06T11:05:00Z", "Sum": 0, "Unit": "Count"},
+        {"Timestamp": "2026-05-06T11:10:00Z", "Sum": 2, "Unit": "Count"},
+        {"Timestamp": "2026-05-06T11:15:00Z", "Sum": 234, "Unit": "Count"},
+        {"Timestamp": "2026-05-06T11:20:00Z", "Sum": 456, "Unit": "Count"},
+        {"Timestamp": "2026-05-06T11:25:00Z", "Sum": 389, "Unit": "Count"},
+        {"Timestamp": "2026-05-06T11:30:00Z", "Sum": 168, "Unit": "Count"},
+        {"Timestamp": "2026-05-06T11:35:00Z", "Sum": 1, "Unit": "Count"},
+        {"Timestamp": "2026-05-06T11:40:00Z", "Sum": 0, "Unit": "Count"}
+      ]
+    },
+    {
+      "MetricName": "Throttles",
+      "Dimensions": [
+        {"Name": "FunctionName", "Value": "image-processor"}
+      ],
+      "Datapoints": [
+        {"Timestamp": "2026-05-06T11:00:00Z", "Sum": 0, "Unit": "Count"},
+        {"Timestamp": "2026-05-06T11:10:00Z", "Sum": 0, "Unit": "Count"},
+        {"Timestamp": "2026-05-06T11:15:00Z", "Sum": 45, "Unit": "Count"},
+        {"Timestamp": "2026-05-06T11:20:00Z", "Sum": 89, "Unit": "Count"},
+        {"Timestamp": "2026-05-06T11:25:00Z", "Sum": 156, "Unit": "Count"},
+        {"Timestamp": "2026-05-06T11:30:00Z", "Sum": 197, "Unit": "Count"},
+        {"Timestamp": "2026-05-06T11:35:00Z", "Sum": 12, "Unit": "Count"},
+        {"Timestamp": "2026-05-06T11:40:00Z", "Sum": 0, "Unit": "Count"}
+      ]
+    },
+    {
+      "MetricName": "ConcurrentExecutions",
+      "Dimensions": [
+        {"Name": "FunctionName", "Value": "image-processor"}
+      ],
+      "Datapoints": [
+        {"Timestamp": "2026-05-06T11:00:00Z", "Maximum": 45, "Unit": "Count"},
+        {"Timestamp": "2026-05-06T11:10:00Z", "Maximum": 67, "Unit": "Count"},
+        {"Timestamp": "2026-05-06T11:15:00Z", "Maximum": 523, "Unit": "Count"},
+        {"Timestamp": "2026-05-06T11:20:00Z", "Maximum": 892, "Unit": "Count"},
+        {"Timestamp": "2026-05-06T11:25:00Z", "Maximum": 1000, "Unit": "Count"},
+        {"Timestamp": "2026-05-06T11:30:00Z", "Maximum": 1000, "Unit": "Count"},
+        {"Timestamp": "2026-05-06T11:35:00Z", "Maximum": 234, "Unit": "Count"},
+        {"Timestamp": "2026-05-06T11:40:00Z", "Maximum": 78, "Unit": "Count"}
+      ]
+    },
+    {
+      "MetricName": "UnreservedConcurrentExecutions",
+      "Dimensions": [
+        {"Name": "FunctionName", "Value": "image-processor"}
+      ],
+      "Datapoints": [
+        {"Timestamp": "2026-05-06T11:00:00Z", "Maximum": 955, "Unit": "Count"},
+        {"Timestamp": "2026-05-06T11:10:00Z", "Maximum": 933, "Unit": "Count"},
+        {"Timestamp": "2026-05-06T11:15:00Z", "Maximum": 477, "Unit": "Count"},
+        {"Timestamp": "2026-05-06T11:20:00Z", "Maximum": 108, "Unit": "Count"},
+        {"Timestamp": "2026-05-06T11:25:00Z", "Maximum": 0, "Unit": "Count"},
+        {"Timestamp": "2026-05-06T11:30:00Z", "Maximum": 0, "Unit": "Count"},
+        {"Timestamp": "2026-05-06T11:35:00Z", "Maximum": 766, "Unit": "Count"},
+        {"Timestamp": "2026-05-06T11:40:00Z", "Maximum": 922, "Unit": "Count"}
+      ]
+    },
+    {
+      "MetricName": "Invocations",
+      "Dimensions": [
+        {"Name": "FunctionName", "Value": "image-processor"}
+      ],
+      "Datapoints": [
+        {"Timestamp": "2026-05-06T11:00:00Z", "Sum": 1245, "Unit": "Count"},
+        {"Timestamp": "2026-05-06T11:10:00Z", "Sum": 1678, "Unit": "Count"},
+        {"Timestamp": "2026-05-06T11:15:00Z", "Sum": 8934, "Unit": "Count"},
+        {"Timestamp": "2026-05-06T11:20:00Z", "Sum": 12345, "Unit": "Count"},
+        {"Timestamp": "2026-05-06T11:25:00Z", "Sum": 10234, "Unit": "Count"},
+        {"Timestamp": "2026-05-06T11:30:00Z", "Sum": 8765, "Unit": "Count"},
+        {"Timestamp": "2026-05-06T11:35:00Z", "Sum": 2456, "Unit": "Count"},
+        {"Timestamp": "2026-05-06T11:40:00Z", "Sum": 1456, "Unit": "Count"}
+      ]
+    }
+  ],
+  "Timestamp": "2026-05-06T11:50:00Z",
+  "Period": 300
+}

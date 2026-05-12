@@ -1,0 +1,40 @@
+INCIDENT REPORT: RDS SLOW QUERIES
+Date: 2026-05-07 16:45:00 UTC
+Service: RDS MySQL 8.0 (prod-db-primary-01)
+Region: us-east-1
+Severity: HIGH
+
+SYMPTOMS:
+- Database query latency increased from 45ms to 800ms median
+- Read IOPS stable but latency high (indicating query complexity issue)
+- Application error rate increased to 3.2% (timeouts at 30s limit)
+- Database CPU at 67% but connections at only 12% of max
+- CloudWatch metrics showed QueryCount normal but DatabaseConnectionTime high
+
+ROOT CAUSE:
+- Scheduled analytics query running without proper indexes on source tables
+- Query attempted full table scan on user_events table (47M rows)
+- Report generation query not using prepared statements effectively
+- Missing composite index on (user_id, timestamp, event_type)
+- Query execution plan changed after data migration 2 days prior
+
+INVESTIGATION STEPS:
+1. Checked RDS Performance Insights — Top SQL showed one query consuming 78% of activity
+2. Ran 'EXPLAIN' on the problematic query — confirmed full table scan
+3. Queried mysql.slow_log — found query with lock_time 1200ms, rows_examined: 42.5M
+4. Checked existing indexes on user_events table — only had primary key index
+5. Analyzed cardinality of (user_id, timestamp, event_type) — good selectivity
+6. Reviewed recent schema changes — migration altered table structure
+
+RESOLUTION:
+1. Created composite index: CREATE INDEX idx_user_event_lookup ON user_events(user_id, timestamp, event_type)
+2. Index creation took 14 minutes (online DDL with LOCK=NONE)
+3. Re-ran problematic query — execution time dropped from 1245ms to 67ms
+4. Updated application ORM query hints to use new index
+5. Restarted analytics reporting job
+6. Database CPU dropped to 18% and queries returned to <50ms
+7. Deployed query cache invalidation to clear any stale results
+
+TOTAL DOWNTIME: 0 minutes (queries still ran, just slow)
+QUERY PERFORMANCE IMPROVEMENT: 18.6x faster
+PREVENTION: Query performance regression testing in CI/CD pipeline

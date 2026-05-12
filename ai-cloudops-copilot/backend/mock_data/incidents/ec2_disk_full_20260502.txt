@@ -1,0 +1,46 @@
+INCIDENT REPORT: EC2 DISK FULL
+Date: 2026-05-02 02:30:00 UTC
+Service: EC2 (i-0d4e1f3a8b2c7e9f) — Logging & Analytics Server
+Region: eu-west-1
+Severity: HIGH
+
+SYMPTOMS:
+- EC2 instance disk utilization at 100%
+- Write operations failing: "No space left on device"
+- Application logs unable to write — services degraded
+- SSH connection slow but accessible
+- Monitoring agent unable to upload metrics
+- Instance warning: "Insufficient disk space for critical operations"
+
+ROOT CAUSE:
+- Docker containers generating excessive log files (no rotation policy)
+- Old application logs not being archived or deleted
+- Docker overlay2 storage consuming 187GB across 14 containers
+- log-driver set to json-file with unlimited size
+- No log rotation configuration in Docker daemon.json
+- Root cause: 6 weeks of unrotated application logs in /var/lib/docker/containers/
+
+INVESTIGATION STEPS:
+1. Connected via SSH and ran 'df -h' — EBS volume 100% full
+2. Used 'du -sh' to find largest directories
+3. Found /var/lib/docker/containers consuming 187GB
+4. Ran 'docker system df' — unrotated container logs taking 156GB
+5. Checked Docker daemon configuration — no log rotation settings
+6. Reviewed each container's log directory size manually
+7. Found one container alone had 67GB of unrotated logs
+
+RESOLUTION:
+1. Manually cleaned old Docker container logs: rm /var/lib/docker/containers/*/*-json.log*
+2. Ran 'docker system prune -a' to remove unused images and containers (freed 67GB)
+3. Updated Docker daemon.json with log rotation:
+   - "log-driver": "json-file"
+   - "log-opts": {"max-size": "100m", "max-file": "3"}
+4. Restarted Docker daemon
+5. Disk utilization dropped from 100% to 34%
+6. Applied same Docker configuration across all EC2 instances in fleet
+7. Increased EBS volume size from 100GB to 200GB for safety margin
+
+TOTAL DOWNTIME: 12 minutes (degraded write performance)
+SPACE FREED: 156GB from Docker logs
+PREVENTION: Implement EBS volume monitoring, log rotation policy
+ESTIMATED PREVENTION COST: +$8/month for larger EBS volume

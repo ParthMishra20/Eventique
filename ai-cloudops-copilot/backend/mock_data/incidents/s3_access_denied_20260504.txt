@@ -1,0 +1,42 @@
+INCIDENT REPORT: S3 BUCKET ACCESS DENIED
+Date: 2026-05-04 14:15:00 UTC
+Service: AWS S3 (data-export-prod bucket)
+Region: us-east-1
+Severity: MEDIUM
+
+SYMPTOMS:
+- Export job failing with "Access Denied" (403 Forbidden)
+- Error: "User: arn:aws:iam::123456789:role/lambda-export-role is not authorized to perform: s3:GetObject"
+- All file downloads from S3 returning 403 since 14:08 UTC
+- Upload operations working fine (different IAM permissions)
+- Affecting 847 users trying to download reports
+- Lambda function unable to read objects from bucket
+
+ROOT CAUSE:
+- S3 bucket policy was accidentally modified by infrastructure team during security audit
+- Policy change removed implicit AllowList for service roles
+- Principal "*" wildcard removed from bucket policy
+- Lambda execution role (lambda-export-role) not explicitly listed in new policy
+- Change deployed without notification to application team
+
+INVESTIGATION STEPS:
+1. Checked Lambda CloudWatch logs — confirmed GetObject calls returning 403
+2. Reviewed S3 bucket policy history (AWS CloudTrail)
+3. Found policy change 7 minutes before incident: removed "Principal": "*"
+4. Checked Lambda execution role attached to function
+5. Compared old vs new bucket policy — new policy didn't include lambda-export-role
+6. Verified Lambda role permissions — s3:GetObject permission exists in role policy
+
+RESOLUTION:
+1. Reviewed updated S3 bucket policy changes
+2. Added lambda-export-role ARN to S3 bucket policy Principal list
+3. Bucket policy update deployed (immediate effect)
+4. Export jobs automatically retried — all succeeded within 2 minutes
+5. Verified object downloads working from S3 console
+6. Added notification system for policy changes to Slack
+7. Implemented approval gate for S3 bucket policy modifications
+
+TOTAL DOWNTIME: 7 minutes
+FAILED REQUESTS: 3,247 download attempts
+REMEDIATION: IAM policy change review and approval workflow implemented
+ROOT CAUSE: Insufficient change notification and approval process

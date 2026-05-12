@@ -1,0 +1,43 @@
+INCIDENT REPORT: VPC NETWORK LATENCY
+Date: 2026-05-01 22:15:00 UTC
+Service: VPC Network (prod-vpc, us-east-1)
+Region: us-east-1
+Severity: MEDIUM
+
+SYMPTOMS:
+- Network latency between EC2 and RDS increased from 1.2ms to 45ms
+- Application database queries delayed (5x slower)
+- Packet loss: 0.8% (normally 0%)
+- ENI (Elastic Network Interface) showing high packet drops
+- Application database connection timeouts (30s limit)
+- VPC Flow Logs showing REJECT packets between security groups
+
+ROOT CAUSE:
+- New development team deployed test environment sharing same VPC
+- Test environment created many redundant security group rules
+- Stateful firewall table exhaustion on ENI (max 20,000 connections)
+- Thousands of test SSH connections left in TIME_WAIT state
+- Network path saturation at security group layer (not bandwidth)
+- VPC NAT instance resource constrained (high CPU from connection tracking)
+
+INVESTIGATION STEPS:
+1. Ran VPC Flow Logs analysis — found REJECT packets in logs
+2. Checked security group rules — found 342 duplicate inbound rules added in 3 hours
+3. Analyzed network traffic patterns — unusually high number of NEW connections
+4. Checked netstat on EC2 instance — 18,947 connections in TIME_WAIT state
+5. Reviewed recent changes — test environment deployed 2.5 hours prior
+6. Contacted network team — test environment was not properly isolated
+
+RESOLUTION:
+1. Identified and removed redundant security group rules (334 duplicate rules)
+2. Moved test environment to separate VPC with proper isolation
+3. Cleaned up stale TCP connections on EC2 (systemctl restart network)
+4. Implemented security group rule validation before deployment
+5. Network latency returned to 1.3ms within 4 minutes
+6. Packet loss dropped to 0%
+7. Set up VPC Flow Logs alerts for REJECT patterns
+
+TOTAL DOWNTIME: 0 minutes (degraded latency only)
+PERFORMANCE IMPACT: 78% reduction in database query latency after fix
+ROOT CAUSE: Lack of VPC isolation between dev and prod
+PREVENTION: Mandatory separate VPCs for dev/test/prod

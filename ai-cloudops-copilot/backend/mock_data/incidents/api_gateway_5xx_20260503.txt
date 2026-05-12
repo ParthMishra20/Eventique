@@ -1,0 +1,45 @@
+INCIDENT REPORT: API GATEWAY 5XX ERRORS
+Date: 2026-05-03 19:45:00 UTC
+Service: API Gateway (production-api)
+Region: us-east-1
+Severity: CRITICAL
+
+SYMPTOMS:
+- API Gateway returning 502 Bad Gateway and 504 Gateway Timeout
+- Error rate spiked to 12.3% starting at 19:35 UTC
+- Latency increased from 250ms to 4500ms (p99)
+- Affected endpoints: /api/v1/reports, /api/v1/analytics
+- Mobile app showing "Connection failed" errors
+- All other endpoints (/api/v1/users, /api/v1/auth) working normally
+
+ROOT CAUSE:
+- /api/v1/reports endpoint integrated with Lambda function (report-generator)
+- Lambda concurrency limit (1,000) reached by high-traffic report requests
+- Report generation backend timeout at 30 seconds
+- API Gateway default timeout is 29 seconds — requests timing out at gateway level
+- Lambda throttling responses (429 Too Many Requests) → API Gateway 502 errors
+- Analytics endpoint calling same Lambda function → cascading failures
+
+INVESTIGATION STEPS:
+1. Checked API Gateway CloudWatch metrics — all 5xx errors tied to report endpoints
+2. Reviewed Lambda CloudWatch — concurrency at 100% (1,000 concurrent executions)
+3. Found Lambda throttling metrics — 487 throttled invocations in 10-minute window
+4. Checked X-Ray traces — some reports taking 28-29 seconds (near timeout)
+5. Reviewed traffic patterns — 60% spike in report requests from marketing campaign
+6. Analyzed Lambda function code — inefficient report generation algorithm
+
+RESOLUTION:
+1. Increased Lambda reserved concurrency from 1,000 to 3,000
+2. Added Lambda function timeout configuration (60 seconds → 90 seconds)
+3. Implemented request queuing and asynchronous job processing
+4. Configured SQS queue for incoming report requests
+5. Modified report endpoints to return 202 Accepted with job ID
+6. Deployed async report generation worker
+7. API Gateway returned to normal response rates within 4 minutes
+8. Error rate dropped from 12.3% to 0.1%
+
+TOTAL DOWNTIME: 10 minutes
+FAILED REQUESTS: 24,847 API calls
+USER IMPACT: 8,920 users affected
+COST INCREASE: +$120/month for increased Lambda concurrency
+PREVENTION: Better load testing for Lambda-backed endpoints

@@ -1,0 +1,28 @@
+# AI CloudOps Copilot - Python Dependencies (Backend)
+# Install with: pip install -r requirements.txt
+
+# LangChain & LLM
+langchain>=0.1.0
+langchain-core>=0.1.0
+langchain-community>=0.0.1
+langchain-groq>=0.0.1
+langgraph>=0.0.1
+
+# Vector Database & Embeddings
+faiss-cpu>=1.7.4
+sentence-transformers>=2.2.0
+torch>=2.0.0
+
+# Utilities
+huggingface-hub>=0.16.0
+numpy>=1.24.0
+python-dotenv>=1.0.0
+
+# Local Development Server
+fastapi>=0.104.0
+uvicorn[standard]>=0.24.0
+
+# AWS SDK (for Transcribe and S3 integration)
+boto3>=1.26.0
+botocore>=1.29.0
+
