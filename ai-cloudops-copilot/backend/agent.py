@@ -155,7 +155,32 @@ def search_incidents(query: str) -> str:
         Formatted string with top 3 similar incidents
     """
     try:
-        vectorstore = _load_vectorstore()
+        # Load FAISS vectorstore explicitly to avoid runtime issues
+        backend_dir = Path(__file__).parent
+        vectorstore_path = os.path.join(
+            os.path.dirname(__file__),
+            'vectorstore',
+            'faiss_index'
+        )
+
+        if not os.path.exists(vectorstore_path):
+            raise FileNotFoundError(
+                f"Vectorstore not found at {vectorstore_path}")
+
+        # Ensure faiss is imported (may be required for deserialization)
+        try:
+            import faiss as faiss_lib
+        except Exception:
+            faiss_lib = None
+
+        # Instantiate embeddings and load vectorstore with dangerous deserialization allowed
+        embeddings = HuggingFaceEmbeddings(
+            model_name="sentence-transformers/all-MiniLM-L6-v2")
+        vectorstore = FAISS.load_local(
+            str(vectorstore_path),
+            embeddings,
+            allow_dangerous_deserialization=True
+        )
 
         # Search with similarity scores
         results = vectorstore.similarity_search_with_score(query, k=3)
