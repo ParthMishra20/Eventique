@@ -61,10 +61,10 @@ export default function ResultsPage() {
   }
 
   const recommendedFixArray = Array.isArray(result.recommended_fix)
-    ? result.recommended_fix
-    : result.recommended_fix
-        .split("\n")
-        .filter((line: string) => line.trim());
+  ? result.recommended_fix
+  : typeof result.recommended_fix === 'string'
+  ? result.recommended_fix.split("\n").filter((line: string) => line.trim())
+  : [];
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 to-gray-950 py-12 px-4">

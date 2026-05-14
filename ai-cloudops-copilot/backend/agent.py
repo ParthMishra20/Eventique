@@ -5,12 +5,14 @@ Orchestrates tools (metrics, logs, incident search) with Groq LLM.
 
 import os
 import json
+import re
 from pathlib import Path
 from dotenv import load_dotenv
 
+import torch  # Ensure torch.nn is available for FAISS deserialization
 from langchain_core.tools import tool
+from langchain_core.messages import SystemMessage, HumanMessage
 from langchain_groq import ChatGroq
-from langgraph.prebuilt import create_react_agent
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_community.vectorstores import FAISS
 
@@ -210,13 +212,11 @@ def search_incidents(query: str) -> str:
 
 
 # ============================================================================
-# LangChain Agent Setup
+# LLM Setup (Direct invocation without ReAct loop)
 # ============================================================================
 
-def create_devops_agent():
-    """Create and configure the LangGraph DevOps agent."""
-
-    # Initialize Groq LLM
+def _get_llm():
+    """Initialize and return Groq LLM."""
     api_key = os.getenv("GROQ_API_KEY")
     if not api_key:
         raise ValueError(
@@ -224,36 +224,11 @@ def create_devops_agent():
             "Please set it in your .env file or environment variables."
         )
 
-    llm = ChatGroq(
+    return ChatGroq(
         model="llama-3.3-70b-versatile",
         api_key=api_key,
         temperature=0.2  # Lower temperature for more deterministic responses
     )
-
-    # System prompt for the agent
-    system_prompt = """You are a senior AWS DevOps engineer. Given the following metrics, logs, and past incidents, perform root cause analysis and give step-by-step fixes. Be concise and structured.
-
-When analyzing issues:
-1. Examine metrics for anomalies (CPU spikes, memory growth, connection issues)
-2. Review logs for error patterns and timestamps
-3. Compare with similar incidents to identify patterns
-4. Provide specific, actionable remediation steps
-5. Structure your response clearly with sections"""
-
-    # Bind system message to LLM
-    llm_with_system = llm.bind(system_prompt=system_prompt)
-
-    # Define tools
-    tools = [get_ec2_metrics, get_recent_logs, search_incidents]
-
-    # Create the agent using LangGraph
-    agent = create_react_agent(
-        llm_with_system,
-        tools,
-        prompt="You are a senior AWS DevOps engineer. Use ONLY these tools: get_ec2_metrics, get_recent_logs, search_incidents. Never call brave_search or any web search tool."
-    )
-
-    return agent
 
 
 # ============================================================================
@@ -262,11 +237,12 @@ When analyzing issues:
 
 def run_agent(query: str, verbose: bool = False) -> dict:
     """
-    Run the DevOps agent on a user query and return structured output.
+    Run DevOps analysis by manually calling tools and passing results to LLM.
+    Avoids ReAct loop infinite retries and recursion limit issues.
 
     Args:
         query: User query (e.g., "Why is my EC2 slow?")
-        verbose: Print detailed agent execution steps
+        verbose: Print detailed execution steps
 
     Returns:
         Dictionary with keys:
@@ -276,33 +252,77 @@ def run_agent(query: str, verbose: bool = False) -> dict:
         - recommended_fix: Step-by-step fix instructions
     """
     try:
-        # Clear shared lists before invoking agent
+        # Clear shared lists before running
         LOGS_USED.clear()
         SIMILAR_INCIDENTS.clear()
-
-        # Create agent
-        agent = create_devops_agent()
 
         if verbose:
             print(f"\n🔍 Analyzing: {query}")
             print("-" * 60)
 
-        # Run agent with message format
-        result = agent.invoke({
-            "messages": [("user", query)]
-        })
+        # Manually invoke all tools
+        if verbose:
+            print("📊 Fetching EC2 metrics...")
+        metrics = get_ec2_metrics.invoke({})
 
-        # Extract response from last message
-        response = result["messages"][-1].content
+        if verbose:
+            print("📝 Fetching recent logs...")
+        logs = get_recent_logs.invoke({})
 
-        # Parse agent output into structured format
-        parsed = _parse_agent_output(response)
+        if verbose:
+            print("🔎 Searching similar incidents...")
+        incidents = search_incidents.invoke(query)
 
-        # Include tool outputs from shared lists
+        # Build context from tool results
+        context = f"""
+=== EC2 METRICS ===
+{metrics}
+=== RECENT LOGS ===
+{logs}
+=== SIMILAR INCIDENTS ===
+{incidents}
+"""
+
+        if verbose:
+            print("🤖 Running LLM analysis...")
+
+        # Get LLM and invoke directly (no ReAct loop)
+        llm = _get_llm()
+
+        response = llm.invoke([
+            SystemMessage(content="""You are a senior AWS DevOps engineer. Given metrics, logs, and similar incidents, perform root cause analysis and provide step-by-step fixes. Be concise and structured.
+
+Return ONLY a valid JSON response with these keys:
+{
+  "summary": "Root cause analysis description",
+  "recommended_fix": ["Step 1", "Step 2", "Step 3"]
+}"""),
+            HumanMessage(
+                content=f"Analyze this issue:\n\nQuery: {query}\n\nContext:\n{context}")
+        ])
+
+        # Parse LLM response
+        response_text = response.content
+
+        # Try to extract JSON from response
+        try:
+            # Try direct JSON parse first
+            parsed = json.loads(response_text)
+        except json.JSONDecodeError:
+            # If direct parse fails, try to find JSON in response
+            json_match = re.search(r'\{.*\}', response_text, re.DOTALL)
+            if json_match:
+                parsed = json.loads(json_match.group())
+            else:
+                # Fallback: use entire response as summary
+                parsed = {
+                    "summary": response_text,
+                    "recommended_fix": []
+                }
+
         return {
-            "summary": parsed.get("summary", response),
-            "logs_used": LOGS_USED,  # Use the collected logs from tool
-            # Use the collected incidents from tool
+            "summary": parsed.get("summary", response_text),
+            "logs_used": LOGS_USED,
             "similar_incidents": SIMILAR_INCIDENTS,
             "recommended_fix": parsed.get("recommended_fix", [])
         }
@@ -310,65 +330,17 @@ def run_agent(query: str, verbose: bool = False) -> dict:
     except Exception as e:
         return {
             "summary": f"Error: {str(e)}",
-            "logs_used": [],
-            "similar_incidents": [],
+            "logs_used": LOGS_USED,
+            "similar_incidents": SIMILAR_INCIDENTS,
             "recommended_fix": ["Please check GROQ_API_KEY and vectorstore setup"]
         }
-
-
-def _parse_agent_output(output: str) -> dict:
-    """Parse agent output into structured sections."""
-    parsed = {
-        "summary": "",
-        "logs_used": [],
-        "similar_incidents": [],
-        "recommended_fix": []
-    }
-
-    # Simple parsing logic - can be enhanced
-    lines = output.split("\n")
-    current_section = "summary"
-
-    for line in lines:
-        line = line.strip()
-        if not line:
-            continue
-
-        # Detect section headers
-        if "root cause" in line.lower():
-            current_section = "summary"
-        elif "log" in line.lower():
-            current_section = "logs_used"
-        elif "incident" in line.lower():
-            current_section = "similar_incidents"
-        elif "fix" in line.lower() or "step" in line.lower():
-            current_section = "recommended_fix"
-
-        # Add content to appropriate section
-        if current_section == "summary":
-            parsed["summary"] += line + "\n"
-        elif current_section == "logs_used" and line.startswith("-"):
-            parsed["logs_used"].append(line[1:].strip())
-        elif current_section == "similar_incidents" and line.startswith("-"):
-            parsed["similar_incidents"].append(line[1:].strip())
-        elif current_section == "recommended_fix" and (line.startswith("-") or line[0].isdigit()):
-            if line.startswith("-"):
-                parsed["recommended_fix"].append(line[1:].strip())
-            else:
-                parsed["recommended_fix"].append(line)
-
-    # Fallback: use full output as summary if parsing didn't work well
-    if not parsed["summary"]:
-        parsed["summary"] = output
-
-    return parsed
 
 
 if __name__ == "__main__":
     # Test the agent
     test_query = "Why is my EC2 instance running at 98% CPU?"
 
-    print("Testing DevOps Agent...")
+    print("Testing DevOps Agent (Direct LLM, no ReAct loop)...")
     result = run_agent(test_query, verbose=True)
 
     print("\n" + "=" * 60)

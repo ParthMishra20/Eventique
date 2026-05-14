@@ -30,7 +30,12 @@ export async function POST(request: NextRequest) {
 
     const result = await response.json();
 
-    return NextResponse.json(result, {
+    const parsedResult = typeof result.body === 'string' 
+  ? JSON.parse(result.body) 
+  : result;
+
+    
+return NextResponse.json(parsedResult, {
       headers: {
         "Access-Control-Allow-Origin": "*",
         "Access-Control-Allow-Methods": "POST, OPTIONS",
